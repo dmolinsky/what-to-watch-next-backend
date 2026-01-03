@@ -2,12 +2,10 @@ package se.dmolinsky.whattowatchnextbackend.domain;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "titles")
-@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Title {
 
@@ -24,4 +22,20 @@ public class Title {
 
     @Column(name = "type", nullable = false)
     private String type;
+
+    public Integer getId() {
+        return id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public String getType() {
+        return type;
+    }
 }
