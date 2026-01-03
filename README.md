@@ -3,7 +3,7 @@
 Spring Boot backend for the *What to Watch Next* project.
 
 ## Tech stack
-- Java 17
+- Java 21
 - Spring Boot
 - Maven
 - PostgreSQL (Neon)
