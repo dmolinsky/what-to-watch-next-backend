@@ -1,5 +1,6 @@
 package se.dmolinsky.whattowatchnextbackend.service;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import se.dmolinsky.whattowatchnextbackend.domain.Title;
 import se.dmolinsky.whattowatchnextbackend.dto.RecommendationDto;
@@ -23,6 +24,10 @@ public class RecommendationService {
         return recommendById(base.getId(), limit);
     }
 
+    @Cacheable(
+            value = "recommendations",
+            key = "#baseId + ':' + #limit"
+    )
     public List<RecommendationDto> recommendById(Integer baseId, int limit) {
         // If the base title has no combined embedding, the query returns empty.
         var rows = titleRepository.findRecommendationsByBaseId(baseId, limit);
