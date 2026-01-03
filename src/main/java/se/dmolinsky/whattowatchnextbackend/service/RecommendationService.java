@@ -1,5 +1,6 @@
 package se.dmolinsky.whattowatchnextbackend.service;
 
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import se.dmolinsky.whattowatchnextbackend.domain.Title;
@@ -24,6 +25,8 @@ public class RecommendationService {
         return recommendById(base.getId(), limit);
     }
 
+
+    @RateLimiter(name = "recommendations")
     @Cacheable(
             value = "recommendations",
             key = "#baseId + ':' + #limit"

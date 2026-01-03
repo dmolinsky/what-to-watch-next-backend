@@ -13,3 +13,11 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
+
+resilience4j:
+  ratelimiter:
+    instances:
+      recommendations:
+        limitForPeriod: 30
+        limitRefreshPeriod: 60s
+        timeoutDuration: 0s

@@ -1,5 +1,6 @@
 package se.dmolinsky.whattowatchnextbackend.controller;
 
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,5 +25,11 @@ public class ApiExceptionHandler {
     }
 
     public record ApiError(String error, String message, String timestamp) {}
+
+    @ExceptionHandler(RequestNotPermitted.class)
+    public ResponseEntity<ApiError> handleRateLimit(RequestNotPermitted ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(new ApiError("too_many_requests", "Rate limit exceeded", java.time.Instant.now().toString()));
+    }
 
 }
