@@ -1,4 +1,8 @@
 package se.dmolinsky.whattowatchnextbackend.dto;
 
-public class TitleDetailDto {
-}
+public record TitleDetailDto(
+        Integer id,
+        String title,
+        Integer year,
+        String type
+) {}
