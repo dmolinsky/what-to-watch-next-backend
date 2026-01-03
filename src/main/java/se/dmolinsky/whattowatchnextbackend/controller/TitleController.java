@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.*;
 import se.dmolinsky.whattowatchnextbackend.domain.Title;
 import se.dmolinsky.whattowatchnextbackend.dto.TitleDetailDto;
 import se.dmolinsky.whattowatchnextbackend.service.TitleService;
+import se.dmolinsky.whattowatchnextbackend.service.BadRequestException;
 
 @RestController
 @RequestMapping("/api/titles")
@@ -17,6 +18,10 @@ public class TitleController {
 
     @GetMapping("/{id}")
     public TitleDetailDto getById(@PathVariable Integer id) {
+        if (id == null || id <= 0) {
+            throw new BadRequestException("id must be a positive integer");
+        }
+
         Title t = titleService.getByIdOrThrow(id);
         return new TitleDetailDto(t.getId(), t.getTitle(), t.getYear(), t.getType());
     }
