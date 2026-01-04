@@ -25,4 +25,12 @@ public class TitleController {
         Title t = titleService.getByIdOrThrow(id);
         return new TitleDetailDto(t.getId(), t.getTitle(), t.getYear(), t.getType());
     }
+
+    @GetMapping("/lookup")
+    public TitleLookupResponse lookup(@RequestParam String title) {
+        Title t = titleService.getByTitleOrThrow(title);
+        return new TitleLookupResponse(t.getId(), t.getTitle());
+    }
+
+    public record TitleLookupResponse(Integer id, String title) {}
 }

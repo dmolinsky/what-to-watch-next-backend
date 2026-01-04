@@ -52,6 +52,7 @@ The application expects the following environment variables:
 - `GET /api/health`
 - `GET /api/titles/{id}`
 - `GET /api/titles/{id}/recommendations?limit=5`
+- `GET /api/titles/lookup?title={title}`
 
 ## Why this project?
 

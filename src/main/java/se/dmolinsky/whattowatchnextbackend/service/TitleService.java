@@ -25,4 +25,16 @@ public class TitleService {
         return optional.get();
     }
 
+    public Title getByTitleOrThrow(String title) {
+        String normalized = title == null ? "" : title.trim();
+
+        Optional<Title> optional = titleRepository.findFirstByTitleIgnoreCase(normalized);
+
+        if (optional.isEmpty()) {
+            throw new NotFoundException("Title not found: " + title);
+        }
+
+        return optional.get();
+    }
+
 }

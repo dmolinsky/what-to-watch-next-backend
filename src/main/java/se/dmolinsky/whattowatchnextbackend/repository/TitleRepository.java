@@ -50,4 +50,6 @@ public interface TitleRepository extends JpaRepository<Title, Integer> {
             @Param("baseId") Integer baseId,
             @Param("limit") int limit
     );
+
+    Optional<Title> findFirstByTitleContainingIgnoreCase(String title);
 }
