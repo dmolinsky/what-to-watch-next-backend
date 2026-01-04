@@ -28,9 +28,11 @@ This repository.
 - Applies ranking and filtering logic
 - Caches expensive recommendation queries to reduce database load
 
-### Frontend (planned)
+### Frontend
 A React + TypeScript frontend that consumes the backend API and presents
 search results and recommendations.
+
+→ Repository:  https://github.com/dmolinsky/what-to-watch-next-frontend
 
 ## Recommendation Engine
 
