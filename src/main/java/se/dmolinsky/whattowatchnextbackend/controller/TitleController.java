@@ -23,7 +23,7 @@ public class TitleController {
         }
 
         Title t = titleService.getByIdOrThrow(id);
-        return new TitleDetailDto(t.getId(), t.getTitle(), t.getYear(), t.getType());
+        return new TitleDetailDto(t.getId(), t.getTitle(), t.getYear(), t.getType(), t.getPosterUrl());
     }
 
     @GetMapping("/lookup")

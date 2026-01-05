@@ -49,7 +49,9 @@ public class RecommendationService {
                         null, // genres mapping later
                         r.getPlot(),
                         r.getDistance(),
-                        1.0 - r.getDistance()
+                        1.0 - r.getDistance(),
+                        r.getPosterUrl()
+
                 ))
                 .toList();
     }
