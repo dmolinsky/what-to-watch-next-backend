@@ -10,5 +10,7 @@ public record RecommendationDto(
         List<String> genres,
         String plot,
         double distance,
-        double similarity
+        double similarity,
+        String posterUrl
+
 ) {}

@@ -4,5 +4,5 @@ public record TitleDetailDto(
         Integer id,
         String title,
         Integer year,
-        String type
-) {}
+        String type,
+        String posterUrl) {}

@@ -23,6 +23,9 @@ public class Title {
     @Column(name = "type", nullable = false)
     private String type;
 
+    @Column(name = "poster_url")
+    private String posterUrl;
+
     public Integer getId() {
         return id;
     }
@@ -37,5 +40,9 @@ public class Title {
 
     public String getType() {
         return type;
+    }
+
+    public String getPosterUrl() {
+        return posterUrl;
     }
 }
