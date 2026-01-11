@@ -9,8 +9,10 @@ public record RecommendationDto(
         String type,
         List<String> genres,
         String plot,
-        double distance,
-        double similarity,
-        String posterUrl
-
+        Double distance,
+        Double similarity,
+        String posterUrl,
+        Double imdbRating,
+        List<String> actors,
+        String directors
 ) {}
