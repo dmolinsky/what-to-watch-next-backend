@@ -17,10 +17,13 @@ public interface TitleRepository extends JpaRepository<Title, Integer> {
         String getTitle();
         Integer getYear();
         String getType();
-        Object getGenres();
         String getPlot();
         String getPosterUrl();
         Double getDistance();
+        String[] getGenres();
+        String[] getActors();
+        Double getImdbRating();
+        String getDirectors();
     }
 
     @Query(
@@ -33,6 +36,9 @@ public interface TitleRepository extends JpaRepository<Title, Integer> {
             t.genres     AS genres,
             t.plot       AS plot,
             t.poster_url AS posterUrl,
+            t.actors     AS actors,
+            t.imdb_rating AS imdbRating,
+            t.directors  AS directors,
             (e.combined_embedding <=> (
                 SELECT e2.combined_embedding
                 FROM embeddings e2
@@ -48,7 +54,6 @@ public interface TitleRepository extends JpaRepository<Title, Integer> {
         """,
             nativeQuery = true
     )
-
     List<RecommendationRow> findRecommendationsByBaseId(
             @Param("baseId") Integer baseId,
             @Param("limit") int limit

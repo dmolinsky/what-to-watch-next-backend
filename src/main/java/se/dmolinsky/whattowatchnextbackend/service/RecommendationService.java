@@ -7,6 +7,7 @@ import se.dmolinsky.whattowatchnextbackend.domain.Title;
 import se.dmolinsky.whattowatchnextbackend.dto.RecommendationDto;
 import se.dmolinsky.whattowatchnextbackend.repository.TitleRepository;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -18,6 +19,10 @@ public class RecommendationService {
         this.titleRepository = titleRepository;
     }
 
+    private static List<String> toList(String[] arr) {
+        return arr == null ? null : Arrays.asList(arr);
+    }
+
     public List<RecommendationDto> recommendByTitle(String queryTitle, int limit) {
         Title base = titleRepository.findFirstByTitleIgnoreCase(queryTitle)
                 .orElseThrow(() -> new NotFoundException("Title not found: " + queryTitle));
@@ -25,18 +30,15 @@ public class RecommendationService {
         return recommendById(base.getId(), limit);
     }
 
-
     @RateLimiter(name = "recommendations")
     @Cacheable(
             value = "recommendations",
             key = "#baseId + ':' + #limit"
     )
     public List<RecommendationDto> recommendById(Integer baseId, int limit) {
-        // If the base title has no combined embedding, the query returns empty.
         var rows = titleRepository.findRecommendationsByBaseId(baseId, limit);
 
         if (rows.isEmpty()) {
-            // could be: title missing embedding, or there are no other embeddings
             throw new NotFoundException("No combined embedding available for title id: " + baseId);
         }
 
@@ -46,13 +48,16 @@ public class RecommendationService {
                         r.getTitle(),
                         r.getYear(),
                         r.getType(),
-                        null, // genres mapping later
+                        toList(r.getGenres()),
                         r.getPlot(),
                         r.getDistance(),
                         1.0 - r.getDistance(),
-                        r.getPosterUrl()
-
+                        r.getPosterUrl(),
+                        r.getImdbRating(),
+                        toList(r.getActors()),
+                        r.getDirectors()
                 ))
                 .toList();
+
     }
 }
