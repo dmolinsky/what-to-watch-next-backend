@@ -54,6 +54,7 @@ public class RecommendationService {
                         1.0 - r.getDistance(),
                         r.getPosterUrl(),
                         r.getImdbRating(),
+                        r.getImdbId(),
                         toList(r.getActors()),
                         r.getDirectors()
                 ))

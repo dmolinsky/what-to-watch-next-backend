@@ -13,6 +13,7 @@ public record RecommendationDto(
         Double similarity,
         String posterUrl,
         Double imdbRating,
+        String imdbId,
         List<String> actors,
         String directors
 ) {}
