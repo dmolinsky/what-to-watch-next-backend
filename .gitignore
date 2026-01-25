@@ -63,3 +63,6 @@ venv/
 pipeline/.venv/
 __pycache__/
 *.pyc
+
+# IMDb data dumps
+pipeline/*.tsv.gz
