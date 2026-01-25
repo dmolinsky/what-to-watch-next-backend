@@ -24,18 +24,23 @@ def fetch_imdb_ids_for_year(year: int) -> list[str]:
     download_file(BASICS_URL, "basics.tsv.gz")
     download_file(RATINGS_URL, "ratings.tsv.gz")
 
-    rating_ids = set()
+    valid_rating_ids = set()
+
     for row in load_tsv("ratings.tsv.gz"):
         num_votes_raw = row.get("numVotes", "\\N")
-        if num_votes_raw == "\\N":
+        rating_raw = row.get("averageRating", "\\N")
+
+        if num_votes_raw == "\\N" or rating_raw == "\\N":
             continue
+
         try:
             num_votes = int(num_votes_raw)
+            rating = float(rating_raw)
         except ValueError:
             continue
 
-        if num_votes >= 5000:
-            rating_ids.add(row["tconst"])
+        if num_votes >= MIN_VOTES and rating >= MIN_RATING:
+            valid_rating_ids.add(row["tconst"])
 
     ids: list[str] = []
 
@@ -51,7 +56,7 @@ def fetch_imdb_ids_for_year(year: int) -> list[str]:
 
         imdb_id = row["tconst"]
 
-        if imdb_id not in rating_ids:
+        if imdb_id not in valid_rating_ids:
             continue
 
         ids.append(imdb_id)
