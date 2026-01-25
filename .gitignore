@@ -56,3 +56,10 @@ application-dev.yml
 
 ### Misc ###
 hs_err_pid*
+
+### Python ###
+.venv/
+venv/
+pipeline/.venv/
+__pycache__/
+*.pyc
