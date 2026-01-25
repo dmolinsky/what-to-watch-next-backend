@@ -1,0 +1,39 @@
+name: Daily YouTube & vibe embeddings
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  daily-vibe:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r scripts/requirements.txt
+
+      - name: Fetch YouTube videos batch
+        run: |
+          python scripts/fetch_youtube_batch.py
+
+      - name: Generate vibe embeddings
+        run: |
+          python scripts/generate_vibe_embeddings.py
+
+      - name: Generate combined embeddings
+        run: |
+          python scripts/generate_combined_embeddings.py
+    env:
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
