@@ -1,0 +1,7 @@
+requests
+python-dotenv
+sqlalchemy
+psycopg[binary]
+pgvector
+numpy
+sentence-transformers
