@@ -9,16 +9,22 @@ Spring Boot backend for the *What to Watch Next* project.
 - Spring Data JPA (Hibernate)
 - PostgreSQL (Neon) + pgvector
 - Maven
-- 
+- Python 3.11
+
 ## Architecture
 
 This project is part of a larger system split into multiple components.
 
-### Offline data pipeline (Python)
-Responsible for fetching metadata, computing embeddings, and storing
-the data in PostgreSQL (Neon).
+### Data Pipeline (Python)
 
-→ Repository: https://github.com/dmolinsky/what-to-watch-next-pipeline
+Responsible for:
+
+Fetching external metadata (IMDb, OMDb, YouTube, etc.)
+Generating embeddings (metadata, vibe, and combined)
+Storing processed data in PostgreSQL (Neon)
+
+The pipeline is implemented as a set of Python scripts located in
+pipeline/scripts/ and is executed via GitHub Actions.
 
 ### Backend API (Spring Boot)
 This repository.
