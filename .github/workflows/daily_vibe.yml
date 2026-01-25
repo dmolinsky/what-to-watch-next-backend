@@ -25,15 +25,15 @@ jobs:
 
       - name: Fetch YouTube videos batch
         run: |
-          python scripts/fetch_youtube_batch.py
+          python pipeline/scripts/fetch_youtube_batch.py
 
       - name: Generate vibe embeddings
         run: |
-          python scripts/generate_vibe_embeddings.py
+          python pipeline/scripts/generate_vibe_embeddings.py
 
       - name: Generate combined embeddings
         run: |
-          python scripts/generate_combined_embeddings.py
+          python pipeline/scripts/generate_combined_embeddings.py
     env:
       YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}

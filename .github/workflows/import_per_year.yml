@@ -28,19 +28,19 @@ jobs:
 
       - name: Fetch new IMDb list for year
         run: |
-          python scripts/fetch_new_imdb_year.py ${{ github.event.inputs.year }}
+          python pipeline/scripts/fetch_new_imdb_year.py ${{ github.event.inputs.year }}
 
       - name: Import OMDb metadata for year
         run: |
-          python scripts/import_meta_data_year.py ${{ github.event.inputs.year }}
+          python pipeline/scripts/import_meta_data_year.py ${{ github.event.inputs.year }}
 
       - name: Generate metadata embeddings
         run: |
-          python scripts/generate_meta_data_embeddings.py
+          python pipeline/scripts/generate_meta_data_embeddings.py
 
       - name: Generate combined embeddings
         run: |
-          python scripts/generate_combined_embeddings.py
+          python pipeline/scripts/generate_combined_embeddings.py
     env:
       OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
