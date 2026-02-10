@@ -5,3 +5,4 @@ psycopg[binary]
 pgvector
 numpy
 sentence-transformers
+google-api-python-client
