@@ -3,7 +3,7 @@ import requests
 from datetime import date, timedelta
 from typing import List
 
-from meta_utils import fetch_omdb_metadata, parse_release_date
+from fetch_metadata import fetch_omdb_metadata, parse_release_date
 
 BASICS_URL = "https://datasets.imdbws.com/title.basics.tsv.gz"
 RATINGS_URL = "https://datasets.imdbws.com/title.ratings.tsv.gz"
