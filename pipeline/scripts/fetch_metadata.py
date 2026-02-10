@@ -1,11 +1,92 @@
+import os
 import time
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
+
+import requests
 
 from db import SessionLocal
 from models import titles
-from meta_utils import fetch_and_parse_omdb
 
 load_dotenv()
+
+
+OMDB_URL = "http://www.omdbapi.com/"
+
+
+def fetch_omdb_metadata(imdb_id: str, retries: int = 3, backoff: float = 0.5) -> Optional[Dict[str, Any]]:
+    api_key = os.getenv("OMDB_API_KEY")
+    if not api_key:
+        raise RuntimeError("OMDB_API_KEY not set in environment")
+
+    params = {"i": imdb_id, "apikey": api_key, "r": "json", "plot": "full"}
+    for attempt in range(1, retries + 1):
+        try:
+            resp = requests.get(OMDB_URL, params=params, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
+            if data.get("Response") == "True":
+                return data
+            else:
+                return None
+        except Exception:
+            if attempt < retries:
+                time.sleep(backoff * attempt)
+                continue
+            return None
+
+
+def parse_release_date(released_value: Optional[str]):
+    if not released_value:
+        return None
+    if released_value == "N/A":
+        return None
+    try:
+        return datetime.strptime(released_value, "%d %b %Y").date()
+    except Exception:
+        return None
+
+
+def _to_list(field: Optional[str]) -> List[str]:
+    if not field or field == "N/A":
+        return []
+    return [s.strip() for s in field.split(",") if s.strip()]
+
+
+def fetch_and_parse_omdb(imdb_id: str) -> Optional[Dict[str, Any]]:
+    raw = fetch_omdb_metadata(imdb_id)
+    if not raw:
+        return None
+
+    title = raw.get("Title")
+    year_raw = raw.get("Year")
+    try:
+        year = int(year_raw.split("–")[0]) if year_raw and year_raw != "N/A" else None
+    except Exception:
+        year = None
+
+    imdb_rating = raw.get("imdbRating")
+    try:
+        imdb_rating = float(imdb_rating) if imdb_rating and imdb_rating != "N/A" else None
+    except Exception:
+        imdb_rating = None
+
+    return {
+        "title": title,
+        "year": year,
+        "type": raw.get("Type"),
+        "genres": _to_list(raw.get("Genre")),
+        "plot": raw.get("Plot") if raw.get("Plot") != "N/A" else None,
+        "directors": _to_list(raw.get("Director")),
+        "writers": _to_list(raw.get("Writer")),
+        "producers": _to_list(raw.get("Production")),
+        "poster_url": raw.get("Poster") if raw.get("Poster") != "N/A" else None,
+        "imdb_rating": imdb_rating,
+        "release_date": parse_release_date(raw.get("Released")),
+        "actors": _to_list(raw.get("Actors")),
+        "raw": raw,
+    }
 
 
 def fetch_and_update_metadata(batch_sleep_seconds: float = 0.2, commit_every: int = 200):
