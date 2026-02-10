@@ -1,24 +1,16 @@
 import os
 import sys
 import time
-from typing import List, Optional
+from typing import List
 
-import requests
 from dotenv import load_dotenv
 
 from db import SessionLocal
 from models import titles
-from fetch_new_imdb_year import fetch_imdb_ids_for_year
-from meta_utils import fetch_and_parse_omdb
+from fetch_metadata import fetch_and_parse_omdb
 
 load_dotenv()
 OMDB_API_KEY = os.getenv("OMDB_API_KEY")
-
-
-# OMDb fetch/parsing helpers are provided by meta_utils.fetch_omdb_metadata and meta_utils.parse_release_date
-
-
-# Use meta_utils.fetch_and_parse_omdb to centralize OMDb parsing
 
 
 def insert_title_if_missing(db, imdb_id: str) -> str:
@@ -39,7 +31,11 @@ def insert_title_if_missing(db, imdb_id: str) -> str:
     year = meta.get("year")
     plot = meta.get("plot")
     type_value = meta.get("type")
-    release_iso = meta.get("release_date").isoformat() if meta.get("release_date") else None
+
+    # release_date is expected to be a datetime.date or datetime.datetime
+    release_obj = meta.get("release_date")
+    release_iso = release_obj.isoformat() if release_obj else None
+
     genres_list = meta.get("genres")
     directors_list = meta.get("directors")
     writers_list = meta.get("writers")
@@ -69,12 +65,11 @@ def insert_title_if_missing(db, imdb_id: str) -> str:
     return "inserted"
 
 
-def import_year(
-        year: int,
-        batch_sleep_seconds: float = 0.2,
+def import_imdb_ids(
+    imdb_ids: List[str],
+    batch_sleep_seconds: float = 0.2,
 ) -> None:
-    imdb_ids: List[str] = fetch_imdb_ids_for_year(year)
-    print(f"📅 Year {year}: Found {len(imdb_ids)} IMDb ids")
+    print(f"🧾 Got {len(imdb_ids)} IMDb ids to process")
 
     db = SessionLocal()
 
@@ -106,9 +101,11 @@ def import_year(
 
 
 if __name__ == "__main__":
+    # Example usage:
+    #   python import_imdb_ids.py tt0111161 tt0068646 tt0468569
     if len(sys.argv) < 2:
-        print("Usage: python import_imdb_year.py 2024")
+        print("Usage: python import_imdb_ids.py <imdb_id_1> <imdb_id_2> ...")
         sys.exit(1)
 
-    year_arg = int(sys.argv[1])
-    import_year(year_arg)
+    ids_from_cli = sys.argv[1:]
+    import_imdb_ids(ids_from_cli)

@@ -3,7 +3,8 @@ import requests
 from datetime import date, timedelta
 from typing import List
 
-from fetch_metadata import fetch_omdb_metadata, parse_release_date
+from fetch_metadata import fetch_and_parse_omdb
+from import_meta_data import import_imdb_ids  # assumes same folder / import path
 
 BASICS_URL = "https://datasets.imdbws.com/title.basics.tsv.gz"
 RATINGS_URL = "https://datasets.imdbws.com/title.ratings.tsv.gz"
@@ -23,17 +24,27 @@ def load_tsv(filename: str):
             yield dict(zip(header, line.strip().split("\t")))
 
 
-def fetch_imdb_ids_for_recent_month(days: int = 30, min_votes: int = 250, min_rating: float = 6.0) -> List[str]:
-    """Return IMDb ids for titles released within the last `days` days.
-
-    Strategy:
-    - Download IMDb basics + ratings datasets.
-    - Build a shortlist of candidates by titleType and rating thresholds (for speed).
-    - Query OMDb for each candidate and parse `Released` to check exact date.
+def fetch_imdb_ids_for_recent_month(
+    days: int = 30,
+    min_votes: int = 400,
+    min_rating: float = 5.8,
+) -> List[str]:
     """
+    Return IMDb ids for titles released within the last `days` days
+    with rating >= min_rating and numVotes >= min_votes.
+
+    Steps:
+    - Download IMDb basics + ratings datasets.
+    - Filter rating rows by min_votes and min_rating.
+    - Join with basics on titleType and tconst.
+    - For each candidate, fetch OMDb metadata and use the parsed `release_date`
+      from fetch_and_parse_omdb to check exact release date.
+    """
+    # Download latest IMDb dumps
     download_file(BASICS_URL, "basics.tsv.gz")
     download_file(RATINGS_URL, "ratings.tsv.gz")
 
+    # Filter on rating + votes first (cheaper)
     valid_rating_ids = set()
     for row in load_tsv("ratings.tsv.gz"):
         num_votes_raw = row.get("numVotes", "\\N")
@@ -54,6 +65,7 @@ def fetch_imdb_ids_for_recent_month(days: int = 30, min_votes: int = 250, min_ra
     cutoff = date.today() - timedelta(days=days)
     ids: List[str] = []
 
+    # Walk basics and join with rating filter
     for row in load_tsv("basics.tsv.gz"):
         if row["titleType"] not in ["movie", "tvSeries", "tvMiniSeries"]:
             continue
@@ -62,24 +74,28 @@ def fetch_imdb_ids_for_recent_month(days: int = 30, min_votes: int = 250, min_ra
         if imdb_id not in valid_rating_ids:
             continue
 
-        # Query OMDb to get the Released field and parse full date
-        data = fetch_omdb_metadata(imdb_id)
-        if not data:
+        # Use the same helper as your importer, so release_date parsing is consistent
+        meta = fetch_and_parse_omdb(imdb_id)
+        if not meta:
             continue
 
-        released = data.get("Released")
-        rd = parse_release_date(released)
-        if not rd:
+        release_date = meta.get("release_date")
+        if not release_date:
             continue
 
-        if rd >= cutoff:
+        # release_date is expected to be a datetime.date (or datetime)
+        if release_date >= cutoff:
             ids.append(imdb_id)
 
     return ids
 
 
 if __name__ == "__main__":
-    ids = fetch_imdb_ids_for_recent_month()
-    print(f"Found {len(ids)} recent titles:")
-    for i in ids:
-        print(i)
+    recent_ids = fetch_imdb_ids_for_recent_month()
+    print(f"Found {len(recent_ids)} recent titles:")
+    for imdb_id in recent_ids:
+        print(imdb_id)
+
+    if recent_ids:
+        print("\nImporting metadata for these titles...")
+        import_imdb_ids(recent_ids)

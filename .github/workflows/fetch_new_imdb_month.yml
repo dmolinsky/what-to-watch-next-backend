@@ -16,6 +16,7 @@ jobs:
     env:
       OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,15 +31,31 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f pipeline/scripts/requirements.txt ]; then pip install -r pipeline/scripts/requirements.txt; fi
 
-      - name: Run fetch_new_imdb_month (dry-run by default)
+      - name: Determine commit mode
+        id: commit_mode
         run: |
-          echo "Running fetch_new_imdb_month (commit=${{ github.event.inputs.commit || 'false' }})"
-          if [ "${{ github.event.inputs.commit || 'false' }}" = "true" ]; then
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            # Scheduled runs should actually modify the DB
+            echo "commit=true" >> "$GITHUB_OUTPUT"
+          else
+            # workflow_dispatch: use the provided input, defaulting to false
+            if [ "${{ github.event.inputs.commit || 'false' }}" = "true" ]; then
+              echo "commit=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "commit=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Run fetch_new_imdb_month
+        run: |
+          echo "Running fetch_new_imdb_month (commit=${{ steps.commit_mode.outputs.commit }})"
+          if [ "${{ steps.commit_mode.outputs.commit }}" = "true" ]; then
             python pipeline/scripts/fetch_new_imdb_month.py --days 30 --min-votes 500 --min-rating 5.8
           else
             python pipeline/scripts/fetch_new_imdb_month.py --days 30 --min-votes 500 --min-rating 5.8 --dry-run
           fi
-          
+
       - name: Generate metadata embeddings for new titles
+        if: steps.commit_mode.outputs.commit == 'true'
         run: |
           python pipeline/scripts/generate_meta_data_embeddings.py
