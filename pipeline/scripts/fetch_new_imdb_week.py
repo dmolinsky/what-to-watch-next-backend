@@ -1,10 +1,98 @@
+import gzip
 import time
+import requests
+from datetime import date, timedelta
 from typing import List
 
 from db import SessionLocal
 from models import titles
-from meta_utils import fetch_and_parse_omdb
-from fetch_new_imdb_month import fetch_imdb_ids_for_recent_month
+from fetch_metadata import fetch_and_parse_omdb
+
+BASICS_URL = "https://datasets.imdbws.com/title.basics.tsv.gz"
+RATINGS_URL = "https://datasets.imdbws.com/title.ratings.tsv.gz"
+
+
+def download_file(url: str, filename: str) -> None:
+    response = requests.get(url, timeout=60)
+    response.raise_for_status()
+    with open(filename, "wb") as f:
+        f.write(response.content)
+
+
+def load_tsv(filename: str):
+    with gzip.open(filename, "rt", encoding="utf-8") as f:
+        header = f.readline().strip().split("\t")
+        for line in f:
+            yield dict(zip(header, line.strip().split("\t")))
+
+
+def fetch_imdb_ids_for_recent_month(days: int = 30, min_votes: int = 250, min_rating: float = 6.0) -> List[str]:
+    """Return IMDb ids for titles released within the last `days` days.
+
+    Strategy mirrors the monthly script: download IMDb basics + ratings datasets,
+    shortlist by rating thresholds, then confirm `Released` via OMDb.
+    """
+    download_file(BASICS_URL, "basics.tsv.gz")
+    download_file(RATINGS_URL, "ratings.tsv.gz")
+
+    valid_rating_ids = set()
+    for row in load_tsv("ratings.tsv.gz"):
+        num_votes_raw = row.get("numVotes", "\\N")
+        rating_raw = row.get("averageRating", "\\N")
+
+        if num_votes_raw == "\\N" or rating_raw == "\\N":
+            continue
+
+        try:
+            num_votes = int(num_votes_raw)
+            rating = float(rating_raw)
+        except ValueError:
+            continue
+
+        if num_votes >= min_votes and rating >= min_rating:
+            valid_rating_ids.add(row["tconst"])
+
+    cutoff = date.today() - timedelta(days=days)
+    ids: List[str] = []
+
+    for row in load_tsv("basics.tsv.gz"):
+        if row["titleType"] not in ["movie", "tvSeries", "tvMiniSeries"]:
+            continue
+
+        imdb_id = row["tconst"]
+        if imdb_id not in valid_rating_ids:
+            continue
+
+        # Query OMDb to get the Released field and parse full date
+        data = fetch_omdb_metadata(imdb_id) if 'fetch_omdb_metadata' in globals() else None
+        # fetch_metadata exposes fetch_omdb_metadata via import in that module; try calling it through fetch_metadata
+        if data is None:
+            try:
+                # fallback: call the helper in fetch_metadata module
+                from fetch_metadata import fetch_omdb_metadata as _fm
+                data = _fm(imdb_id)
+            except Exception:
+                data = None
+
+        if not data:
+            continue
+
+        released = data.get("Released")
+        # parse_release_date is provided by fetch_metadata; use it via import
+        rd = None
+        try:
+            from fetch_metadata import parse_release_date as _pr
+            rd = _pr(released)
+        except Exception:
+            rd = None
+
+        if not rd:
+            continue
+
+        if rd >= cutoff:
+            ids.append(imdb_id)
+
+    return ids
 
 
 def fetch_new_imdb_week(days: int = 7, min_votes: int = 250, min_rating: float = 5.8, batch_sleep_seconds: float = 0.2, commit_every: int = 100) -> List[str]:
