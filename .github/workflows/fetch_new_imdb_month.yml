@@ -38,3 +38,7 @@ jobs:
           else
             python pipeline/scripts/fetch_new_imdb_month.py --days 30 --min-votes 500 --min-rating 5.8 --dry-run
           fi
+          
+      - name: Generate metadata embeddings for new titles
+        run: |
+          python pipeline/scripts/generate_meta_data_embeddings.py

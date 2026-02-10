@@ -36,5 +36,9 @@ jobs:
           if [ "${{ github.event.inputs.commit || 'false' }}" = "true" ]; then
             python pipeline/scripts/fetch_new_imdb_week.py --days 7 --min-votes 250 --min-rating 5.8
           else
-            python pipeline/scripts/fetch_new_imdb_week.py --days 7 --min-votes 250 --min-rating 5.8i --dry-run
+            python pipeline/scripts/fetch_new_imdb_week.py --days 7 --min-votes 250 --min-rating 5.8 --dry-run
           fi
+
+      - name: Generate metadata embeddings for new titles
+        run: |
+          python pipeline/scripts/generate_meta_data_embeddings.py
