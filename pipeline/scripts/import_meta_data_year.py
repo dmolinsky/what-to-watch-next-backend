@@ -9,69 +9,16 @@ from dotenv import load_dotenv
 from db import SessionLocal
 from models import titles
 from fetch_new_imdb_year import fetch_imdb_ids_for_year
+from meta_utils import fetch_and_parse_omdb
 
 load_dotenv()
 OMDB_API_KEY = os.getenv("OMDB_API_KEY")
 
 
-def fetch_omdb_data(imdb_id: str) -> Optional[dict]:
-    """Fetch metadata for a given IMDb ID from the OMDb API."""
-    if not OMDB_API_KEY:
-        raise RuntimeError("OMDB_API_KEY is missing. Check your .env")
-
-    url = f"https://www.omdbapi.com/?i={imdb_id}&apikey={OMDB_API_KEY}"
-
-    try:
-        response = requests.get(url, timeout=15)
-        data = response.json()
-    except Exception as e:
-        print(f"❌ Request failed for {imdb_id}: {e}")
-        return None
-
-    if data.get("Response") == "False":
-        print(f"❌ OMDb Error for {imdb_id}: {data.get('Error')}")
-        return None
-
-    return data
+# OMDb fetch/parsing helpers are provided by meta_utils.fetch_omdb_metadata and meta_utils.parse_release_date
 
 
-def parse_list_field(value: Optional[str]) -> list[str]:
-    """
-    Converts OMDb comma-separated string fields into a list.
-    Example: "John Doe, Jane Smith" → ["John Doe", "Jane Smith"]
-    """
-    if not value or value == "N/A":
-        return []
-    return [item.strip() for item in value.split(",") if item.strip()]
-
-
-def parse_imdb_rating(value: Optional[str]) -> Optional[float]:
-    """Convert OMDb 'imdbRating' to float, handle missing or 'N/A'."""
-    if not value or value == "N/A":
-        return None
-    try:
-        return float(value)
-    except ValueError:
-        return None
-
-
-def parse_first_two_actors(value: Optional[str]) -> Optional[list[str]]:
-    """Extract the first two actors from OMDb 'Actors' field."""
-    if not value or value == "N/A":
-        return None
-
-    parts = [p.strip() for p in value.split(",") if p.strip()]
-    if not parts:
-        return None
-
-    return parts[:2]
-
-
-def normalize_poster_url(value: Optional[str]) -> Optional[str]:
-    """Return a usable poster URL or None."""
-    if not value or value == "N/A":
-        return None
-    return value
+# Use meta_utils.fetch_and_parse_omdb to centralize OMDb parsing
 
 
 def insert_title_if_missing(db, imdb_id: str) -> str:
@@ -83,33 +30,29 @@ def insert_title_if_missing(db, imdb_id: str) -> str:
         print(f"↩ Skipping {imdb_id}, already in DB (id={existing.id})")
         return "skipped"
 
-    data = fetch_omdb_data(imdb_id)
-    if not data:
+    meta = fetch_and_parse_omdb(imdb_id)
+    if not meta:
         print(f"❌ No OMDb data for {imdb_id}")
         return "failed"
 
-    title_name = data.get("Title") or None
-    year_raw = data.get("Year") or None
-    year: Optional[int] = None
-    if year_raw and year_raw.isdigit():
-        year = int(year_raw)
-
-    plot = data.get("Plot") or None
-    type_value = data.get("Type") or None
-
-    genres_list = parse_list_field(data.get("Genre"))
-    directors_list = parse_list_field(data.get("Director"))
-    writers_list = parse_list_field(data.get("Writer"))
-    producers_list = parse_list_field(data.get("Production"))
-
-    imdb_rating = parse_imdb_rating(data.get("imdbRating"))
-    actors_2 = parse_first_two_actors(data.get("Actors"))
-    poster_url = normalize_poster_url(data.get("Poster"))
+    title_name = meta.get("title")
+    year = meta.get("year")
+    plot = meta.get("plot")
+    type_value = meta.get("type")
+    release_iso = meta.get("release_date").isoformat() if meta.get("release_date") else None
+    genres_list = meta.get("genres")
+    directors_list = meta.get("directors")
+    writers_list = meta.get("writers")
+    producers_list = meta.get("producers")
+    imdb_rating = meta.get("imdb_rating")
+    actors_2 = meta.get("actors")
+    poster_url = meta.get("poster_url")
 
     insert_stmt = titles.insert().values(
         imdb_id=imdb_id,
         title=title_name,
         year=year,
+        release_date=release_iso,
         plot=plot,
         type=type_value,
         genres=genres_list or None,

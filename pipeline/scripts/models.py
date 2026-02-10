@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, Integer, Text, ARRAY, ForeignKey, Float
+from sqlalchemy import Table, Column, Integer, Text, ARRAY, ForeignKey, Float, Date
 from sqlalchemy.orm import registry
 from pgvector.sqlalchemy import Vector
 from db import metadata
@@ -20,7 +20,8 @@ titles = Table(
     Column("producers", ARRAY(Text)),
     Column("poster_url", Text),
     Column("imdb_rating", Float),
-    Column("actors", ARRAY(Text))
+    Column("actors", ARRAY(Text)),
+    Column("release_date", Date, nullable=True)
 )
 
 embeddings = Table(
